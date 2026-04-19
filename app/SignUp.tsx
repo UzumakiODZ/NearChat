@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, TextInput, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { BASE_URL } from './config';
+import { BASE_URL } from '../constants/config';
 
 const SignUpPage = () => {
   const [email, setEmail] = useState('');

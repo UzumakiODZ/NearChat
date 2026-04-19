@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from './config';
+import { BASE_URL } from '../constants/config';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');

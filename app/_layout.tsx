@@ -4,7 +4,6 @@ import { Slot, useRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationHandler from './(tabs)/NotificationHandler';
 

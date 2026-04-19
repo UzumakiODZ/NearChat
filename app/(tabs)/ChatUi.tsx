@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, BackHandler } from 'react-native';
+import {StyleSheet, View, KeyboardAvoidingView,Text, Image, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, BackHandler, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { io, Socket } from 'socket.io-client';
 import { useRouter } from 'expo-router';
-import { BASE_URL } from '../config';
+import { BASE_URL } from '../../constants/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 interface Message {
   id: number;
@@ -14,6 +15,84 @@ interface Message {
   createdAt: string;
 }
 
+// Cache for URL previews
+const previewCache = new Map();
+
+const fetchMetadata = async (url: string) => {
+  // Check cache first
+  if (previewCache.has(url)) {
+    return previewCache.get(url);
+  }
+
+  try {
+    const response = await fetch(url);
+    const html = await response.text();
+    
+    // Using RegExp object to avoid Metro Bundler parsing issues with literal regex containing tags
+    const titleRegex = new RegExp('<title>(.*?)</title>', 'i');
+    const titleMatch = html.match(titleRegex);
+    const ogTitleMatch = html.match(/<meta property="og:title" content="(.*?)"/i);
+    const ogDescMatch = html.match(/<meta property="og:description" content="(.*?)"/i);
+    const ogImageMatch = html.match(/<meta property="og:image" content="(.*?)"/i);
+    
+    const metadata = {
+      title: ogTitleMatch?.[1] || titleMatch?.[1] || 'No title',
+      description: ogDescMatch?.[1] || '',
+      image: ogImageMatch?.[1] || null,
+    };
+    
+    previewCache.set(url, metadata);
+    return metadata;
+  } catch (error) {
+    console.log('Failed to fetch metadata:', error);
+    return null;
+  }
+};
+
+const URLPreview = ({ url }: { url: string }) => {
+  const [metadata, setMetadata] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMetadata(url).then(data => {
+      setMetadata(data);
+      setLoading(false);
+    });
+  }, [url]);
+
+  if (loading) {
+    return (
+      <View style={{ padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, marginTop: 8 }}>
+        <ActivityIndicator size="small" color="#007BFF" />
+        <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>Loading preview...</Text>
+      </View>
+    );
+  }
+  
+  if (!metadata) return null;
+
+  return (
+    <TouchableOpacity 
+      onPress={() => Linking.openURL(url)} 
+      style={styles.previewContainer}
+      activeOpacity={0.7}
+    >
+      {metadata.image && (
+        <Image 
+          source={{ uri: metadata.image }} 
+          style={styles.previewImage}
+          resizeMode="cover"
+        />
+      )}
+      <Text style={styles.previewTitle} numberOfLines={1}>{metadata.title}</Text>
+      {metadata.description && (
+        <Text style={styles.previewDescription} numberOfLines={2}>
+          {metadata.description}
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+};
 const ChatUi = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -22,6 +101,8 @@ const ChatUi = () => {
   const [receiverId, setReceiverId] = useState<number | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const router = useRouter();
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   useEffect(() => {
     const initChat = async () => {
@@ -132,20 +213,30 @@ const ChatUi = () => {
     return <ActivityIndicator size="large" color="#007BFF" style={{ flex: 1, justifyContent: 'center' }} />;
   }
 
-  const renderItem = ({ item }: { item: Message }) => (
-    <View
-      style={[
-        styles.messageContainer,
-        item.senderId === currentUserId ? styles.myMessage : styles.contactMessage
-      ]}
-    >
-      <Text style={styles.messageText}>{item.content}</Text>
-      <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
-    </View>
-  );
+  const renderItem = ({ item }: { item: Message }) => {
+    const urls = item.content.match(urlRegex);
+    const cleanText = item.content.replace(urlRegex, '');
+
+    return (
+      <View
+        style={[
+          styles.messageContainer,
+          item.senderId === currentUserId ? styles.myMessage : styles.contactMessage
+        ]}
+      >
+        <View>
+          {cleanText && <Text style={styles.messageText}>{cleanText}</Text>}
+          {urls?.map((url, index) => (
+            <URLPreview key={`${item.id}-${index}`} url={url} />
+          ))}
+        </View>
+        <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+      </View>
+    );
+  };
 
   return (
-    
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="height" keyboardVerticalOffset={10}>
       <SafeAreaView style={styles.container}>
         <FlatList
           inverted
@@ -160,17 +251,39 @@ const ChatUi = () => {
             value={newMessage}
             onChangeText={setNewMessage}
             placeholder="Type a message"
+            textAlignVertical="top"  
           />
           <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
             <Text style={styles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    
+    </KeyboardAvoidingView>  
   );
 };
 
 const styles = StyleSheet.create({
+  previewContainer: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  previewImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  previewTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  previewDescription: {
+    color: '#666',
+    fontSize: 14,
+  },
   container: {
     flex: 1,
     backgroundColor: '#E5DDD5',
@@ -220,6 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderColor: '#ccc',
+    color: '#000',
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 15,

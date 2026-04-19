@@ -2,9 +2,8 @@ import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../config';
+import { BASE_URL } from '../../constants/config';
 
 // 1. Define Interface for the Data Payload coming from Backend
 interface NotificationPayload {
@@ -39,9 +38,15 @@ export default function NotificationHandler() {
         if (userId) {
           // Replace with your actual backend URL
           try {
-            await axios.post(`${BASE_URL}/update-push-token`, {
-              userId: userId,
-              token: token,
+            await fetch(`${BASE_URL}/update-push-token`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId: userId,
+                token: token,
+              }),
             });
             console.log("Push Token updated for user", userId);
           } catch (e) {
@@ -74,11 +79,16 @@ export default function NotificationHandler() {
           }
 
           // HIT YOUR BACKEND ENDPOINT
-          await axios.post(`${BASE_URL}/messages`, {
-            content: userText,
-            receiverId: chatId,
-            senderId: senderId,
-            
+          await fetch(`${BASE_URL}/messages`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content: userText,
+              receiverId: chatId,
+              senderId: senderId,
+            }),
           });
 
           console.log("Reply sent successfully from", senderId, "to", currentUserId);

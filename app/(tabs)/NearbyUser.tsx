@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, FlatList, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, FlatList, ActivityIndicator, Image, TouchableOpacity, Alert, BackHandler} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { BASE_URL } from '../config';
+import { BASE_URL } from '../../constants/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PreferenceSetter from '../../components/PreferenceSetter';
 
 interface User {
   id: number;
@@ -18,6 +19,27 @@ const NearbyUser = () => {
   const router = useRouter();
 
   useEffect(() => {
+    const backAction = () => {
+      Alert.alert('Hold on!', 'Are you sure you want to exit the app?', [
+        {
+          text: 'Cancel',
+          onPress: () => null,
+          style: 'cancel'
+        },
+        { text: 'Exit', onPress: () => BackHandler.exitApp() }
+      ]);
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => {
+      backHandler.remove();
+    };
+  }, []);
+
+
+  useEffect(() => {
     const checkAuthentication = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem('userId');
@@ -29,9 +51,10 @@ const NearbyUser = () => {
           return;
         }
 
-        const userId = parseInt(storedUserId, 10);
+        const userId = Number.parseInt(storedUserId, 10);
+        const distance = 10;
         setCurrentUserId(userId);
-        fetchNearbyUsers(userId);
+        fetchNearbyUsers(userId,distance);
         console.log(userId);
       } catch (error) {
         console.error('Authentication check failed:', error);
@@ -39,13 +62,14 @@ const NearbyUser = () => {
       }
     };
 
-    const fetchNearbyUsers = async (userId: number) => {
+    const fetchNearbyUsers = async (userId: number, distance: number) => {
       try {
         const token = await AsyncStorage.getItem('token');
         console.log(token);
         const response = await fetch(`${BASE_URL}/nearby-users/${userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           }
         });
 
@@ -82,31 +106,42 @@ const NearbyUser = () => {
 
   return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.welcomeText}>Nearby Users</Text>
+        <View style={{ width: '95%', marginBottom: 20 }}>
+          <Text style={styles.welcomeText}>Nearby Users</Text>
+        </View>
+        
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />
-        ) : users.length > 0 ? (
-          <FlatList
-            style={{ width: '90%' }}
-            data={users}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.pikaNameContainer}>
-                <Text style={styles.pikaName}>{item.username}</Text>
-                <View style={styles.userInfo}>
-                  <TouchableOpacity onPress={() => handleChatPress(item.id)}>
-                    <Image
-                      source={require('../../assets/images/icons8-chat-24.png')}
-                      style={styles.icon}
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.pikaName}>{item.distance.toFixed(2)} km away</Text>
-                </View>
+        ) : (
+          <>
+          
+            <PreferenceSetter />
+            {users.length > 0 ? (
+              <FlatList
+                style={{ width: '90%' }}
+                data={users}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.pikaNameContainer}>
+                    <Text style={styles.pikaName}>{item.username}</Text>
+                    <View style={styles.userInfo}>
+                      <TouchableOpacity onPress={() => handleChatPress(item.id)}>
+                        <Image
+                          source={require('../../assets/images/icons8-chat-24.png')}
+                          style={styles.icon}
+                        />
+                      </TouchableOpacity>
+                      <Text style={styles.pikaName}>{item.distance.toFixed(2)} km away</Text>
+                    </View>
+                  </View>
+                )}
+              />
+            ) : (
+              <View>
+                <Text style={styles.pikaName}>No nearby users found</Text>
               </View>
             )}
-          />
-        ) : (
-          <Text style={styles.pikaName}>No nearby users found</Text>
+          </>
         )}
     </SafeAreaView>
   );
