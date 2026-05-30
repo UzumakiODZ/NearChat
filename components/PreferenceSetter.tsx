@@ -9,12 +9,12 @@ const PreferenceSetter = () => {
     const [age, setAge] = useState(18);
     const genders = ['Male', 'Female', 'Both'];
     const [selectedGender, setSelectedGender] = useState(genders[2]);
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
 
-    if (open) {
+    if (!open) {
         return (
             <View style={styles.toggleContainer}>
-                <TouchableOpacity style={styles.iconButton} onPress={() => setOpen(false)}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => setOpen(true)}>
                     <FontAwesome name="sliders" size={20} color="#111827" />
                 </TouchableOpacity>
             </View>
@@ -24,7 +24,7 @@ const PreferenceSetter = () => {
     return (
         <View style={styles.opencontainer}>
             <View style={styles.toggleContainer}>
-                <TouchableOpacity style={styles.iconButton} onPress={() => setOpen(true)}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => setOpen(false)}>
                     <FontAwesome name="close" size={20} color="#111827" />
                 </TouchableOpacity>
             </View>

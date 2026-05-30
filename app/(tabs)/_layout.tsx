@@ -47,6 +47,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="location.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="UserConnections"
+      />
+      <Tabs.Screen
+        name="UserProfile"
+      />
     </Tabs>
   );
 }

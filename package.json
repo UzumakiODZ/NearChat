@@ -22,6 +22,7 @@
     "expo-splash-screen": "~31.0.12",
     "expo-status-bar": "~3.0.9",
     "expo-system-ui": "^6.0.9",
+    "expo-video": "~3.0.16",
     "expo-web-browser": "~15.0.10",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -31,9 +32,17 @@
     "react-native-screens": "~4.16.0",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "0.5.1",
-    "socket.io-client": "^4.8.1",
-    "undefined": "react-icons/gi"
+    "socket.io-client": "^4.8.1"
   },
+  "plugins": [
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
+        }
+      ]
+  ],
   "name": "frontEnd",
   "version": "1.0.0",
   "scripts": {

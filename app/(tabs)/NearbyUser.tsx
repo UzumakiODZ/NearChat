@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { BASE_URL } from '../../constants/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PreferenceSetter from '../../components/PreferenceSetter';
+import RouteTray from '../../components/RouteTray';
 
 interface User {
   id: number;
@@ -143,17 +144,20 @@ const NearbyUser = () => {
             )}
           </>
         )}
+
+        <RouteTray />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#F0F4F8',
+    padding: 10,
     width: '100%',
+    height: '100%',
   },
   welcomeText: {
     fontSize: 22,
